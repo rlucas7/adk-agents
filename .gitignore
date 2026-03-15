@@ -1,0 +1,5 @@
+setup.sh
+*.DS_Store*
+*__pycache__*
+*.adk*
+*.env*
