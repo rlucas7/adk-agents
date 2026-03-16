@@ -25,7 +25,7 @@ RUN pip install google-adk==1.27.1 wikipedia arxiv
 # Copy agent - Start
 
 # Set permission
-COPY --chown=myuser:myuser "adk-gents/research_assistant/" "/app/agents/research_assistant/"
+COPY --chown=myuser:myuser "adk-agents/research_assistant/" "/app/agents/research_assistant/"
 
 # Copy agent - End
 
