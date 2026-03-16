@@ -33,3 +33,21 @@ adk eval research_assistant/ ra_eval_set_v1 \
     --config_file_path research_assistant/eval_config.json \
     --print_detailed_results
 ```
+
+
+## Agents in the repo
+
+Currently there are:
+
+- research_assistant
+- cal_agent
+
+The `cal_agent` works on localhost only. This is because of the need to
+run through the oauth2 protocol for accessing google calendar and making
+edits. The oauth2 workflow is in testing mode and I am the person on
+the list of testers.
+
+The `research_assistant` is deployed into a public cloud run function.
+The DNS entry is the default one for the google cloud app so it's not
+a nice, memorable url but it works. Still improvements to do on the
+app though.

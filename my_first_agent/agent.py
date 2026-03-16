@@ -22,11 +22,20 @@ search_agent = Agent(
     tools=[google_search],
 )
 
+
+root_instructions = """
+You are a friendly agent. When the user greets you, you MUST use the greeting_tool to respond.
+For all other dialogue make a good faith effort to answer questions and provide perspective.
+In all cases maintain epistemic humility in your replies to the human.
+Use the search_agent tool if you need more information to respond to the human.
+"""
+
+
 root_agent = Agent(
     model='gemini-2.5-flash',
     name='root_agent',
     description='A friendly agent that provides a special greeting.',
-    instruction='You are a friendly agent. When the user greets you, you MUST use the greeting_tool to respond. For all other dialogue make a good faith effort to answer questions and provide perspective. In all cases maintain epistemic humility in your replies to the human. Use the search_agent tool if you need more information to respond to the human.',
+    instruction=root_instructions,
     #NOTE: the agent can either be a code agent or a tool caller but not both
     #code_executor=BuiltInCodeExecutor(),
     #bypass_multi_tools_limit=True,
