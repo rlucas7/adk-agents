@@ -1,6 +1,7 @@
 import wikipedia
 import arxiv
 
+from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.google_search_tool import GoogleSearchTool
 from google.adk.agents.llm_agent import LlmAgent
 
@@ -21,6 +22,21 @@ def wikipedia_tool(query: str) -> str:
         return f"Sorry, I could not find a wikipedia page for '{query}'."
     except Exception as e:
         return f"An unexpected error occurred while search Wikipedia: {e}"
+
+
+wiki_agent_instructions = """you are a specialized agent and your task is
+to accept a research query and use the `wikipedia_tool` to find relevant
+information.
+"""
+
+
+wikipedia_agent = LlmAgent(
+    name='wikipedia_researcher',
+    model='gemini-2.5-flash',
+    description='An expert at finding and summarixing information from Wikipedia',
+    instruction=wiki_agent_instructions,
+    tools=[wikipedia_tool]
+)
 
 
 def arxiv_tool(query: str) -> str:
@@ -48,6 +64,36 @@ def arxiv_tool(query: str) -> str:
         return f"An unexpected error occurred while searching arXiv: {e}"
 
 
+arxiv_tool_instructions = """
+You are a specialized agent whose job it is to search arXiv for papers on a
+given topic. Use `arxiv_tool` to find the papers.
+"""
+
+
+arxiv_agent = LlmAgent(
+    name='arXiv_agent',
+    model='gemini-2.5-flash',
+    description='An expert at finding and summarizing academic papers from ArXiv.',
+    instruction=arxiv_tool_instructions,
+    tools=[arxiv_tool],
+)
+
+
+google_search_instruction = """
+Your only task is to accept a research topic, use the `GoogleSearchTool` to find
+relevant information about the topic and return a concise summary of the search
+results.
+"""
+
+google_search_agent = LlmAgent(
+    name='google_search',
+    model='gemini-2.5-flash',
+    description='An expert at searching the web to find relevant, up-to-date information on a topic using the `GoogleSearchTool` to find the information.',
+    instruction=google_search_instruction,
+    tools=[GoogleSearchTool(bypass_multi_tools_limit=True)],
+)
+
+
 def report_writer_tool(content: str, filename: str) -> str:
     """
     Writes the given content to a local file. Appends if the file already exists.
@@ -63,30 +109,60 @@ def report_writer_tool(content: str, filename: str) -> str:
     except Exception as e:
         return f"An error occurred while writing to file: {e}"
 
-instruction = """
-You are a helpful and diligent research assistant. Your goal is to produce a brief research
-report on a given topic.
-
-You must follow these steps in order:
-1. First, gather background information on the topic using the wikipedia_tool.
-2. Next, find relevant academic papers using the arxiv_tool.
-3. Then, find supplementary web articles using the google_search_tool.
-4. Finally, synthesize all the information you have gathered from all sources into a
-   coherent report and use the report_writer_tool to save this complete report
-   to a file named 'report.txt'.
+report_writer_instruction = """
+You are a specialized agent whose job is to use the `report_writer_tool`
+to write given text content to a specified file.
 """
 
 
-root_agent = LlmAgent(
+writer_agent = LlmAgent(
     model='gemini-2.5-flash-lite',
-    name='root_agent',
+    name='report_writer',
     description='A research assistnat that gathers information from Wikipedia, arXiv, and Google Search to create a summary report on a given topic.',
-    instruction=instruction,
+    instruction=report_writer_instruction,
     tools=[
-        wikipedia_tool,
-        arxiv_tool,
-        GoogleSearchTool(bypass_multi_tools_limit=True),
         report_writer_tool
     ],
 )
 
+### controller agent
+
+controller_instruction = """
+You are a research assistant who orchestrates a team of specialist agents
+to produce a high-quality research report.
+
+Your primary role is to delegate tasks, synthesize the results, and ensure
+the final report is well-structured.
+
+Your specialist team consists of:
+- `wikipedia_researcher`: Use this agent to get general background information
+     and a high-level overview.
+- `arxiv_researcher`: Use this agent to find relevant academic papers and
+     their summaries.
+- `web_searcher`: Use this agent to find up-to-date information and supplementary
+     context from the web.
+
+  Your workflow must be as follows:
+  1.  First, call all three specialist research agents:
+     (`wikipedia_researcher`, `arxiv_researcher`, and `web_searcher`)
+     to gather a comprehensive set of information on the topic.
+  2.  Once all information has been gathered, you must personally synthesize
+      the content from all three sources into a single, coherent summary.
+  3.  Finally, call the `report_writer` tool to save the complete, synthesized
+      report into a text file. The filename should be based on the research
+      topic (e.g., black_holes_report.txt).
+"""
+
+
+root_agent = LlmAgent(
+    name='controller',
+    model='gemini-2.5-flash',
+    description='The main controller for a multi-agent research team.',
+    instruction=controller_instruction,
+    tools=[
+        AgentTool(wikipedia_agent),
+        AgentTool(arxiv_agent),
+        AgentTool(google_search_agent),
+        AgentTool(writer_agent),
+    ],
+)
